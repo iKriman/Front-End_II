@@ -96,7 +96,7 @@ export default function App() {
           />
         </Routes>
         <footer className="mt-10 flex flex-col justify-between gap-2 border-t border-stone-200 pt-5 text-xs text-stone-500 sm:flex-row">
-          <span>La Huerta · Proyecto académico PFY2202</span>
+          <span>La Huerta · Proyecto académico</span>
           <span>Información y productos de demostración</span>
         </footer>
       </main>
