@@ -1,62 +1,47 @@
-import React, { createContext, useContext, useEffect, useReducer, useState } from 'react';
-import { initialArticles } from '../data/articles';
-import { inventoryReducer, isStoredArticle, validateArticle } from './inventoryReducer';
-
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useReducer,
+  useState,
+  useCallback,
+  useRef,
+} from 'react';
+import { useLocation } from 'react-router';
+import { inventoryReducer, createState } from './inventoryReducer';
+import { validateArticle } from '../lib/inventory';
+import { loadInventory, saveInventory } from '../lib/storage';
 const InventoryContext = createContext(null);
-const storageKey = 'la-huerta-inventario-v2';
-
-function loadArticles() {
-  try {
-    const current = localStorage.getItem(storageKey);
-    if (current !== null) {
-      const articles = JSON.parse(current);
-      if (
-        Array.isArray(articles) &&
-        articles.every(isStoredArticle) &&
-        new Set(articles.map((a) => a.id)).size === articles.length
-      )
-        return articles;
-      return initialArticles;
-    }
-    // Conserva el inventario de la primera semana al abrir la nueva versión.
-    const previous = JSON.parse(localStorage.getItem('la-huerta-inventario-v1'));
-    if (Array.isArray(previous)) {
-      const migrated = previous.map((article) => ({
-        ...article,
-        brand:
-          typeof article.brand === 'string' && article.brand.trim()
-            ? article.brand
-            : 'Sin especificar',
-        type: article.type || article.category,
-      }));
-      if (
-        migrated.every(isStoredArticle) &&
-        new Set(migrated.map((a) => a.id)).size === migrated.length
-      )
-        return migrated;
-    }
-  } catch {
-    /* Un dato inválido no impide iniciar la aplicación. */
-  }
-  return initialArticles;
-}
 
 export function InventoryProvider({ children }) {
-  const [articles, dispatch] = useReducer(inventoryReducer, undefined, loadArticles);
+  const [recovery] = useState(() =>
+    loadInventory({ getItem: (key) => window.localStorage.getItem(key) }),
+  );
+  const [state, dispatch] = useReducer(inventoryReducer, recovery, (data) =>
+    createState(data.articles, data.cart),
+  );
   const [storageError, setStorageError] = useState('');
-  const [notice, setNotice] = useState('');
-
+  const [recoveryVisible, setRecoveryVisible] = useState(true);
+  const { pathname } = useLocation();
+  const previousPath = useRef(pathname);
+  useEffect(() => {
+    const previous = previousPath.current;
+    previousPath.current = pathname;
+    if (previous !== pathname && state.notice?.path === previous) {
+      dispatch({ type: 'notice/dismissed', id: state.notice.id });
+    }
+  }, [pathname, state.notice]);
   useEffect(() => {
     try {
-      localStorage.setItem(storageKey, JSON.stringify(articles));
+      saveInventory(window.localStorage, state, recovery);
       setStorageError('');
     } catch {
       setStorageError(
-        'No se pudieron guardar los cambios en este navegador. Se conservarán mientras la aplicación permanezca abierta.',
+        'No se pudieron guardar los cambios. Se conservarán mientras la aplicación permanezca abierta.',
       );
     }
-  }, [articles]);
-
+  }, [state.articles, state.cart, recovery]);
+  const dismissNotice = useCallback((id) => dispatch({ type: 'notice/dismissed', id }), []);
   function addArticle(values) {
     const errors = validateArticle(values);
     if (Object.keys(errors).length) return { errors };
@@ -69,22 +54,32 @@ export function InventoryProvider({ children }) {
       stock: Number(values.stock),
       icon: '📦',
     };
-    dispatch({ type: 'article/added', article });
-    setNotice(`Se agregó ${article.name} al inventario.`);
+    dispatch({ type: 'article/added', article, path: '/inventario' });
     return { article, errors: {} };
   }
-
-  function changeStock(id, delta) {
-    dispatch({ type: 'article/stockChanged', id, delta });
+  function act(type, extra = {}) {
+    dispatch({ type, path: pathname, ...extra });
   }
-
   return (
-    <InventoryContext.Provider value={{ articles, addArticle, changeStock, storageError, notice }}>
+    <InventoryContext.Provider
+      value={{
+        ...state,
+        addArticle,
+        storageError,
+        recoveryIssues: recoveryVisible ? recovery.issues : [],
+        dismissRecovery: () => setRecoveryVisible(false),
+        changeStock: (id, delta) => act('article/stockChanged', { id, delta }),
+        addToCart: (id, quantity) => act('cart/added', { id, quantity }),
+        changeCart: (id, delta) => act('cart/changed', { id, delta }),
+        removeFromCart: (id) => act('cart/removed', { id }),
+        clearCart: () => act('cart/cleared'),
+        dismissNotice,
+      }}
+    >
       {children}
     </InventoryContext.Provider>
   );
 }
-
 export function useInventory() {
   const context = useContext(InventoryContext);
   if (!context) throw new Error('useInventory debe usarse dentro de InventoryProvider.');

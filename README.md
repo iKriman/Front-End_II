@@ -1,252 +1,231 @@
 # Supermercado La Huerta
 
-Aplicación web para gestionar el inventario de un supermercado. Permite registrar artículos con su nombre, marca y tipo de producto, consultar el catálogo y actualizar las existencias desde una interfaz adaptable a distintos tamaños de pantalla.
-
-Proyecto de **Desarrollo Frontend II (PFY2202)**, Experiencia 1, Semana 2. Continúa el sitio desarrollado durante la primera semana.
+Aplicación React para administrar artículos, consultar existencias y gestionar un carrito de compras sincronizado con el inventario. Cada cambio de cantidad actualiza la disponibilidad del artículo sin recargar la página.
 
 ## Funcionalidades
 
-- Página de inicio con resumen del inventario y artículos que requieren reposición.
-- Formulario independiente para registrar nuevos artículos.
-- Listado en tabla con nombre, marca, tipo, precio, disponibilidad y existencias.
-- Búsqueda por nombre o marca, sin distinguir mayúsculas ni tildes.
-- Filtros por tipo de producto y disponibilidad.
-- Controles para aumentar o disminuir existencias, sin permitir cantidades negativas.
-- Estado global compartido entre las páginas mediante Context y `useReducer`.
-- Guardado local del inventario y recuperación de los datos de la primera versión.
+- Inicio con indicadores de inventario y artículos que requieren reposición.
+- Registro de artículos con nombre, marca, categoría, precio y existencias.
+- Tabla completa del inventario y búsqueda por nombre o marca.
+- Filtro dinámico por categoría y disponibilidad, sin modificar el catálogo original.
+- Detalle de cada artículo mediante una ruta dinámica.
+- Selección de cantidades y agregado al carrito con control de existencias.
+- Carrito con aumento, disminución, eliminación y vaciado de artículos.
+- Descuento y devolución de unidades al inventario en cada operación del carrito.
+- Persistencia conjunta del inventario y el carrito en el navegador.
+- Recuperación de artículos válidos y avisos ante inconsistencias de almacenamiento.
 - Páginas Quiénes somos y Nuestras tiendas.
-- Menú de gestión de inventario y menú inferior de navegación.
-- Estilos con Tailwind CSS y publicación automática en GitHub Pages.
+- Diseño responsive, navegación por teclado y mensajes accesibles.
 
 ## Tecnologías
 
-| Tecnología               | Uso                                              |
-| ------------------------ | ------------------------------------------------ |
-| React 19                 | Componentes y actualización de la interfaz       |
-| React Router 7           | Navegación entre páginas                         |
-| Context API y useReducer | Estado global y acciones del inventario          |
-| Tailwind CSS 4           | Estilos, componentes visuales y diseño adaptable |
-| Vite 7                   | Servidor de desarrollo y compilación             |
-| localStorage             | Persistencia en el navegador                     |
-| Node.js Test Runner      | Pruebas de validación y actualización del estado |
+| Tecnología               | Uso                                                 |
+| ------------------------ | --------------------------------------------------- |
+| React 19                 | Componentes e interfaz                              |
+| React Router 7           | Navegación, rutas anidadas y parámetros dinámicos   |
+| Context API y useReducer | Estado global y operaciones de inventario y carrito |
+| Tailwind CSS 4           | Estilos, tema visual y diseño adaptable             |
+| Vite 7                   | Desarrollo y compilación                            |
+| localStorage             | Persistencia local                                  |
+| Prettier                 | Formato del código                                  |
+| Node.js Test Runner      | Pruebas de reglas y recuperación de datos           |
 
-## Requisitos
-
-- Node.js 22.12 o superior.
-- npm.
+Se importa directamente desde `react-router`. La versión exacta de cada dependencia está registrada en `package-lock.json`.
 
 ## Instalación
 
-Descarga o clona el repositorio y abre una terminal en la carpeta que contiene `package.json`.
+Requiere Node.js 22.12 o superior y npm. La publicación utiliza Node.js 24.
+
+Desde la carpeta que contiene `package.json`:
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Abre la dirección que indica la terminal. Con la configuración actual, normalmente será:
-
-```text
-http://localhost:5173/
-```
-
-También puedes iniciar el servidor con `npm start`. Para detenerlo, presiona `Ctrl + C`.
+Abre la dirección que indique la terminal, normalmente [http://localhost:5173/](http://localhost:5173/). Para detener el servidor, presiona `Ctrl + C`.
 
 ## Comandos
 
-| Comando           | Descripción                              |
-| ----------------- | ---------------------------------------- |
-| `npm run dev`     | Inicia el servidor de desarrollo         |
-| `npm start`       | Inicia el servidor de desarrollo         |
-| `npm test`        | Ejecuta las pruebas del inventario       |
-| `npm run build`   | Compila la aplicación en `dist/`         |
-| `npm run preview` | Sirve una vista previa de la compilación |
+| Comando                     | Descripción                      |
+| --------------------------- | -------------------------------- |
+| `npm run dev` o `npm start` | Inicia el servidor de desarrollo |
+| `npm test`                  | Ejecuta las pruebas              |
+| `npm run format`            | Aplica Prettier                  |
+| `npm run format:check`      | Comprueba el formato             |
+| `npm run build`             | Genera la aplicación en `dist/`  |
+| `npm run preview`           | Sirve la compilación localmente  |
 
-Para revisar la versión de producción:
+## Recorrido de uso
 
-```bash
-npm run build
-npm run preview
-```
+1. Ingresa a **Listado de artículos** para consultar el inventario completo.
+2. Selecciona una categoría o escribe un nombre o marca. El filtro cambia la vista y no elimina artículos.
+3. Haz clic en el nombre de un artículo para abrir su detalle.
+4. Ingresa una cantidad y presiona **Agregar al carrito**. Las unidades se descuentan de las existencias disponibles.
+5. Abre **Carrito** para modificar la selección. **+** descuenta una unidad adicional y **−** devuelve una unidad al inventario.
+6. Si la cantidad llega a cero, se elimina esa línea del carrito. **Quitar artículo** devuelve todas las unidades de la línea; **Vaciar carrito y devolver unidades** hace lo mismo para la selección completa.
+7. Regresa al inventario para comprobar las existencias actualizadas.
 
-## Páginas
+Los botones **+** y **−** del listado son ajustes administrativos de existencias. Los botones del carrito transfieren unidades entre el carrito y el stock disponible.
 
-| Ruta de React Router | Página                          |
-| -------------------- | ------------------------------- |
-| `/`                  | Inicio y resumen del inventario |
-| `/articulos/nuevo`   | Formulario de registro          |
-| `/inventario`        | Tabla de artículos              |
-| `/quienes-somos`     | Presentación del supermercado   |
-| `/nuestras-tiendas`  | Información de sucursales       |
-| Cualquier otra ruta  | Página no encontrada            |
+## Reglas del inventario
 
-Se utiliza `HashRouter` para permitir la recarga de páginas internas en GitHub Pages. Por ejemplo, el inventario se abre en `/Front-End_II/#/inventario`.
+- Nombre y marca son obligatorios, con un máximo de 80 y 60 caracteres respectivamente.
+- La categoría debe existir en el catálogo de categorías.
+- Precio: entero entre 1 y 100.000.000 pesos chilenos.
+- Existencias: entero entre 0 y 1.000.000 unidades.
+- Las entradas numéricas aceptan solo dígitos decimales. No admiten espacios, signos, decimales, hexadecimal ni notación científica.
+- No se puede agregar al carrito una cantidad superior a las existencias disponibles.
+- Un artículo agotado puede consultarse, pero no agregarse al carrito.
+- El stock disponible más las unidades del carrito no puede superar el límite de existencias por artículo.
+- Los precios se muestran en pesos chilenos, sin decimales.
 
-## Estructura
+| Unidades disponibles | Estado     |
+| -------------------- | ---------- |
+| 0                    | Agotado    |
+| De 1 a 9             | Stock bajo |
+| 10 o más             | Disponible |
+
+## Estado y flujo de datos
+
+`InventoryProvider` mantiene un estado global con `articles`, `cart` y un aviso temporal. El formulario, el inventario, los detalles, el carrito y el encabezado consultan esa misma fuente de datos.
+
+Las acciones se procesan en `inventoryReducer`. Una operación de carrito calcula primero la nueva cantidad y, en la misma actualización, modifica el stock disponible y la línea del carrito. Esto evita descuentos parciales y cantidades calculadas a partir de un render anterior.
 
 ```text
-.
-├── .github/
-│   └── workflows/
-│       └── deploy.yml
-├── src/
-│   ├── components/
-│   │   ├── PageIntro.jsx
-│   │   ├── InventoryMenu.jsx
-│   │   └── Summary.jsx
-│   ├── context/
-│   │   ├── InventoryContext.jsx
-│   │   └── inventoryReducer.js
-│   ├── data/
-│   │   └── articles.js
-│   ├── pages/
-│   │   ├── Home.jsx
-│   │   ├── About.jsx
-│   │   ├── Stores.jsx
-│   │   ├── Inventory.jsx
-│   │   └── NewArticle.jsx
-│   ├── App.jsx
-│   ├── main.jsx
-│   └── styles.css
-├── tests/
-│   └── inventory.test.js
-├── .gitignore
-├── index.html
-├── package.json
-├── package-lock.json
-├── vite.config.js
-└── README.md
+Formulario → article/added → Estado global → Listado e Inicio
+Detalle → cart/added → Inventario y carrito actualizados juntos
+Carrito → cart/changed o cart/removed → Unidades transferidas al inventario
+Estado global → Guardado de articles y cart en una sola entrada
 ```
 
-## Estado global
+Los mensajes de existencias se construyen a partir del resultado de cada acción. Los avisos pueden cerrarse, caducan a los seis segundos y se descartan al abandonar la página donde se mostraron. El aviso de registro se presenta en el listado después de guardar.
 
-`InventoryProvider` envuelve la aplicación en `main.jsx` y mantiene una única lista de artículos. Las páginas acceden a ella con el hook `useInventory`.
+Los filtros se mantienen en los parámetros de búsqueda de la ruta. La lista visible se deriva del catálogo; no se guarda una segunda copia del inventario.
 
-- `NewArticle` envía los datos mediante `addArticle`.
-- `Inventory` consulta la lista y utiliza `changeStock` para actualizar existencias.
-- `Home` calcula sus indicadores a partir de esa misma lista.
-- `inventoryReducer` centraliza las acciones `article/added` y `article/stockChanged` sin modificar el estado anterior.
+## Rutas
 
-Las búsquedas, filtros y entradas del formulario usan `useState`, ya que solo afectan a la página donde se utilizan. El inventario se mantiene en el contexto para compartirlo entre componentes.
+| Ruta                    | Página                       |
+| ----------------------- | ---------------------------- |
+| `/`                     | Inicio                       |
+| `/inventario`           | Listado y filtros            |
+| `/articulos/nuevo`      | Registro de artículos        |
+| `/articulos/:articleId` | Detalle del artículo         |
+| `/carrito`              | Carrito de compras           |
+| `/quienes-somos`        | Información del supermercado |
+| `/nuestras-tiendas`     | Sucursales                   |
+| Cualquier otra ruta     | Página no encontrada         |
 
-## Registro de artículos
+`AppRoutes.jsx` centraliza las rutas. `SiteLayout` comparte encabezado, menús, avisos y pie de página mediante `Outlet`. Las páginas se cargan bajo demanda con `lazy` y `Suspense`.
 
-Desde el menú superior, selecciona **Ingresar artículo** y completa:
+Se utiliza `HashRouter` para que los enlaces internos funcionen al recargar en GitHub Pages. Ejemplo: `/Front-End_II/#/articulos/2`. Un identificador inexistente muestra un mensaje y permite volver al inventario.
 
-| Campo            | Validación                                  |
-| ---------------- | ------------------------------------------- |
-| Nombre           | Obligatorio, hasta 80 caracteres            |
-| Marca            | Obligatoria, hasta 60 caracteres            |
-| Tipo de producto | Una de las opciones del selector            |
-| Precio unitario  | Entero entre 1 y 100.000.000 pesos chilenos |
-| Existencias      | Entero entre 0 y 1.000.000 unidades         |
+## Organización
 
-Al guardar, la aplicación agrega el artículo al estado global y abre el listado. Los errores se muestran junto a cada campo y el foco pasa al primer dato que requiere corrección.
+```text
+src/
+├── components/
+│   ├── inventory/
+│   │   ├── ArticleRow.jsx
+│   │   ├── InventoryEmpty.jsx
+│   │   ├── InventoryFilters.jsx
+│   │   ├── InventoryTable.jsx
+│   │   └── StockControls.jsx
+│   ├── layout/
+│   │   ├── BottomNavigation.jsx
+│   │   ├── Footer.jsx
+│   │   ├── Header.jsx
+│   │   └── SiteLayout.jsx
+│   ├── CartItem.jsx
+│   ├── InventoryMenu.jsx
+│   ├── Notice.jsx
+│   ├── PageIntro.jsx
+│   ├── StockBadge.jsx
+│   └── Summary.jsx
+├── context/
+│   ├── InventoryContext.jsx
+│   └── inventoryReducer.js
+├── data/
+│   └── articles.js
+├── lib/
+│   ├── inventory.js
+│   └── storage.js
+├── pages/
+│   ├── About.jsx
+│   ├── ArticleDetail.jsx
+│   ├── Cart.jsx
+│   ├── Home.jsx
+│   ├── Inventory.jsx
+│   ├── NewArticle.jsx
+│   ├── NotFound.jsx
+│   └── Stores.jsx
+├── routes/
+│   └── AppRoutes.jsx
+├── App.jsx
+├── main.jsx
+└── styles.css
+```
 
-## Disponibilidad
+`data/articles.js` contiene los artículos iniciales de demostración, las categorías y los helpers de presentación. `lib/inventory.js` concentra la validación y la selección de artículos. `lib/storage.js` se ocupa de leer, recuperar y guardar datos. Los componentes de presentación no realizan operaciones directas sobre el almacenamiento.
 
-| Existencias       | Estado     |
-| ----------------- | ---------- |
-| 0 unidades        | Agotado    |
-| De 1 a 9 unidades | Stock bajo |
-| 10 unidades o más | Disponible |
+## Persistencia y recuperación
 
-El botón para disminuir existencias se deshabilita al llegar a cero. El botón para aumentarlas se deshabilita al alcanzar el límite de un millón de unidades.
+El estado se guarda en `la-huerta-inventario-v3` con la versión del esquema, los artículos y el carrito. Al recargar, el stock ya descontado se recupera junto con el carrito; no se vuelve a descontar.
 
-## Persistencia
+Si no hay datos de la versión 3, se intenta recuperar el inventario de las versiones 2 y 1. La categoría anterior se conserva y las marcas ausentes de la primera versión quedan como **Sin especificar**.
 
-El inventario se guarda en la clave `la-huerta-inventario-v2` de `localStorage`. Los datos se conservan al navegar y recargar desde el mismo navegador y dirección.
+Cuando hay registros inválidos o duplicados, se recuperan los artículos válidos y se informa qué se omitió. Antes de guardar el resultado se conserva el contenido original en `la-huerta-inventario-v3-recuperacion`, si todavía no existe una copia. Si no puede guardarse la copia, tampoco se sobrescribe el original.
 
-Si todavía existe el inventario de la primera versión, se recupera al iniciar esta versión por primera vez. La categoría anterior se convierte en el tipo de producto y las marcas que no estaban registradas quedan como **Sin especificar**. Los artículos nuevos requieren una marca.
+Un contenido ilegible o con estructura incorrecta abre un inventario vacío con un aviso; no se sustituye silenciosamente por productos de muestra. Las líneas inconsistentes del carrito se omiten y se solicita revisar existencias porque no es posible reconstruirlas con certeza.
 
-La información no se sincroniza entre dispositivos. Si se borra el almacenamiento del sitio, se pierde el catálogo guardado. Cuando el navegador bloquea el guardado, aparece un aviso y los cambios permanecen durante la sesión.
+Los datos iniciales solo se usan cuando no hay un inventario anterior o no se puede acceder al almacenamiento. Si el guardado está bloqueado, se informa en pantalla y los cambios permanecen durante la sesión.
 
-## Tailwind CSS
+Este almacenamiento pertenece al navegador y al origen de la página. No se sincroniza entre dispositivos ni entre pestañas abiertas. La aplicación no procesa pagos ni confirma pedidos.
 
-El framework está instalado como dependencia de desarrollo y se integra mediante `@tailwindcss/vite` en `vite.config.js`.
+## Estilos y accesibilidad
 
-`src/styles.css` importa Tailwind y define los colores de La Huerta, los estilos base y algunas clases compartidas. Las páginas utilizan utilidades de Tailwind para las grillas, espaciados, colores, tipografía, tablas y adaptación a pantallas móviles. El CSS se genera durante la compilación, sin depender de una CDN.
+Tailwind CSS se integra con Vite y genera el CSS de producción. `styles.css` define el tema de La Huerta y clases compartidas para botones, paneles, menús y controles de existencias.
+
+La interfaz adapta columnas y formularios a pantallas estrechas. La tabla conserva sus columnas y permite desplazamiento horizontal dentro de su contenedor. Se incluyen etiquetas de campos, encabezados de tablas, foco visible, enlace para saltar al contenido, mensajes anunciables y validaciones asociadas a cada entrada.
 
 ## Pruebas
 
 ```bash
 npm test
-```
-
-Las pruebas cubren el registro de artículos, la inmutabilidad del estado, el rechazo de registros inválidos o identificadores repetidos y los límites de las existencias.
-
-Para verificar la aplicación manualmente:
-
-1. Ingresa un artículo con nombre, marca, tipo, precio y existencias.
-2. Comprueba que aparezca en el listado y en los totales de Inicio.
-3. Búscalo por nombre y por marca, y combina los filtros disponibles.
-4. Modifica sus existencias, navega a otra página y regresa.
-5. Recarga para comprobar el guardado local.
-6. Envía el formulario vacío y revisa los mensajes de validación.
-7. Comprueba las páginas informativas y los botones Atrás y Adelante.
-8. Revisa el formulario y el desplazamiento de la tabla en una pantalla estrecha.
-
-## Formato y responsabilidades
-
-El proyecto utiliza Prettier con dos espacios de indentación, punto y coma, comillas simples y un ancho de referencia de 100 caracteres.
-
-```bash
-npm run format
 npm run format:check
+npm run build
 ```
 
-`format` aplica el formato y `format:check` comprueba que se respete. Se excluyen los archivos generados y el archivo de bloqueo de dependencias.
+Las pruebas de `tests/inventory.test.js` verifican registro, validación, filtrado, inmutabilidad, operaciones de carrito, devolución de unidades, límites, orden de líneas y mensajes calculados desde el estado actualizado. Incluyen una secuencia de 500 operaciones que comprueba la conservación de unidades.
 
-Las responsabilidades se distribuyen así:
+`tests/storage.test.js` verifica migración, recuperación parcial, JSON ilegible, copias de recuperación, almacenamiento bloqueado y persistencia conjunta de inventario y carrito.
 
-| Carpeta o archivo      | Responsabilidad                                                     |
-| ---------------------- | ------------------------------------------------------------------- |
-| `src/App.jsx`          | Estructura común y rutas                                            |
-| `src/pages/`           | Contenido y comportamiento de cada página                           |
-| `src/components/`      | Encabezado de página, menú de gestión y resumen reutilizables       |
-| `src/context/`         | Estado global, persistencia, validaciones y acciones del inventario |
-| `src/data/articles.js` | Catálogo inicial, tipos de producto y helpers compartidos           |
-| `tests/`               | Verificación de reglas del inventario                               |
+Para comprobar el comportamiento completo, registra un artículo con 5 unidades, agrega 2 al carrito, aumenta a 3, disminuye a 2 y quítalo. El stock esperado es 5 → 3 → 2 → 3 → 5. Recarga con el carrito ocupado para verificar que no se descuente dos veces.
 
-Los artículos iniciales son datos de demostración definidos en `src/data/articles.js`. A partir de ellos, el contexto gestiona los datos ingresados por el usuario y su guardado en el navegador.
+## Publicación en GitHub Pages
 
-## Publicación y rutas
+1. Sube este proyecto completo a la raíz del repositorio, incluyendo `.github/workflows/deploy.yml`.
+2. En **Settings > Pages > Build and deployment > Source**, selecciona **GitHub Actions**.
+3. Al subir cambios a `main`, el flujo instala dependencias con `npm ci`, comprueba el formato, ejecuta las pruebas, compila y publica `dist/`.
+4. En **Actions**, espera a que **Publicar en GitHub Pages** termine correctamente. Si es necesario, ejecútalo con **Run workflow** sobre `main`.
 
-En desarrollo y en una compilación local, la aplicación utiliza `/` como base. Para otro destino, define `VITE_BASE_PATH` en un archivo `.env.local`, tomando `.env.example` como referencia:
+El flujo obtiene la base de publicación de la configuración de Pages y la pasa como `VITE_BASE_PATH`. No hay un nombre de repositorio fijado en el código.
 
-```dotenv
-VITE_BASE_PATH=/mi-supermercado/
-```
-
-También se puede pasar la base desde la terminal:
+En local, la base es `/`. Para compilar manualmente bajo otra ruta:
 
 ```bash
 npm run build -- --base=/mi-supermercado/
 ```
 
-En GitHub Pages, el flujo `.github/workflows/deploy.yml` consulta la configuración de Pages y pasa su ruta a `VITE_BASE_PATH` antes de compilar. Así, el nombre del repositorio no queda fijado en el código y un dominio propio puede usar la raíz.
+También puedes definir `VITE_BASE_PATH` en `.env.local` usando `.env.example` como referencia. La base se establece durante la compilación.
 
-En **Settings > Pages > Build and deployment**, selecciona **GitHub Actions** como origen. Al subir cambios a `main`, el flujo comprueba el formato, ejecuta las pruebas, compila y publica `dist/`.
+La dirección del repositorio utilizado hasta esta versión es [https://github.com/iKriman/Front-End_II](https://github.com/iKriman/Front-End_II), con Pages en [https://ikriman.github.io/Front-End_II/](https://ikriman.github.io/Front-End_II/).
 
-La dirección del repositorio actual es [https://ikriman.github.io/Front-End_II/](https://ikriman.github.io/Front-End_II/). Las páginas internas conservan `HashRouter`, por ejemplo `/Front-End_II/#/inventario`.
+No subas `node_modules/`, `dist/` ni archivos privados de entorno. El archivo `.gitignore` los excluye.
 
-### Escenarios de navegación
+## Referencias
 
-| Destino                           | Base                | Comprobaciones                                                                       |
-| --------------------------------- | ------------------- | ------------------------------------------------------------------------------------ |
-| Desarrollo local o dominio propio | `/`                 | Inicio, menús, Atrás y Adelante, recarga de `/#/inventario` y ruta inexistente       |
-| Repositorio actual en Pages       | `/Front-End_II/`    | Carga de recursos, registro, listado y recarga de `/Front-End_II/#/inventario`       |
-| Otro repositorio o subcarpeta     | `/mi-supermercado/` | Los mismos recorridos bajo la nueva base y página no encontrada dentro del fragmento |
-
-La base se resuelve al compilar: publica el contenido generado para el destino elegido. Las carpetas `node_modules/` y `dist/` no se incluyen en el repositorio.
-
-## Contexto
-
-La Huerta es una marca ficticia. Los artículos y las sucursales se utilizan como datos de demostración. La aplicación funciona en el navegador y no requiere un servidor de datos.
-
-## Documentación
-
-- [React: Context y reducer](https://react.dev/learn/scaling-up-with-reducer-and-context)
+- [React: reducer y Context](https://react.dev/learn/scaling-up-with-reducer-and-context)
 - [React Router](https://reactrouter.com/start/declarative/routing)
 - [Tailwind CSS con Vite](https://tailwindcss.com/docs/installation/using-vite)
-- [Publicación de Vite en GitHub Pages](https://vite.dev/guide/static-deploy.html#github-pages)
+- [Publicación con Vite](https://vite.dev/guide/static-deploy.html)

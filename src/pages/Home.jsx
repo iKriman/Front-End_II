@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useInventory } from '../context/InventoryContext';
 import { PageIntro } from '../components/PageIntro';
 import { Summary } from '../components/Summary';

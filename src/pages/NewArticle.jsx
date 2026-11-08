@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { useInventory } from '../context/InventoryContext';
 import { productTypes } from '../data/articles';
 import { PageIntro } from '../components/PageIntro';
@@ -82,9 +82,9 @@ export default function NewArticle() {
               {error('brand')}
             </div>
             <div>
-              <label htmlFor="type">Tipo de producto</label>
+              <label htmlFor="type">Categoría</label>
               <select {...field('type')}>
-                <option value="">Selecciona un tipo</option>
+                <option value="">Selecciona una categoría</option>
                 {productTypes.map((type) => (
                   <option key={type}>{type}</option>
                 ))}
@@ -95,7 +95,9 @@ export default function NewArticle() {
               <label htmlFor="price">Precio unitario (CLP)</label>
               <input
                 {...field('price')}
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]+"
                 min="1"
                 max="100000000"
                 step="1"
@@ -107,7 +109,9 @@ export default function NewArticle() {
               <label htmlFor="stock">Existencias iniciales</label>
               <input
                 {...field('stock')}
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]+"
                 min="0"
                 max="1000000"
                 step="1"

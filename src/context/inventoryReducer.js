@@ -1,63 +1,113 @@
-import { productTypes } from '../data/articles.js';
+import { isStoredArticle, MAX_STOCK, isDecimalInteger, reservedUnits } from '../lib/inventory.js';
 
-export function validateArticle(values) {
-  const errors = {};
-  if (!values.name?.trim()) errors.name = 'Ingresa el nombre del artículo.';
-  else if (values.name.trim().length > 80) errors.name = 'El nombre admite hasta 80 caracteres.';
-  if (!values.brand?.trim()) errors.brand = 'Ingresa la marca del artículo.';
-  else if (values.brand.trim().length > 60) errors.brand = 'La marca admite hasta 60 caracteres.';
-  if (!productTypes.includes(values.type)) errors.type = 'Selecciona un tipo de producto.';
-  if (
-    String(values.price ?? '').trim() === '' ||
-    !Number.isSafeInteger(Number(values.price)) ||
-    Number(values.price) < 1 ||
-    Number(values.price) > 100000000
-  ) {
-    errors.price = 'Ingresa un precio entero entre $1 y $100.000.000.';
-  }
-  if (
-    String(values.stock ?? '').trim() === '' ||
-    !Number.isSafeInteger(Number(values.stock)) ||
-    Number(values.stock) < 0 ||
-    Number(values.stock) > 1000000
-  ) {
-    errors.stock = 'Ingresa existencias enteras entre 0 y 1.000.000.';
-  }
-  return errors;
+export const createState = (articles = [], cart = []) => ({
+  articles,
+  cart,
+  notice: null,
+  sequence: 0,
+});
+function notify(state, action, text, tone = 'success') {
+  const sequence = state.sequence + 1;
+  return { ...state, sequence, notice: { id: sequence, text, tone, path: action.path } };
 }
-
-export function isStoredArticle(article) {
-  return (
-    article &&
-    typeof article.id === 'string' &&
-    article.id.length > 0 &&
-    typeof article.name === 'string' &&
-    typeof article.brand === 'string' &&
-    Number.isSafeInteger(article.price) &&
-    Number.isSafeInteger(article.stock) &&
-    Object.keys(validateArticle(article)).length === 0
+function transfer(state, action, quantity) {
+  const article = state.articles.find((item) => item.id === action.id);
+  if (!article || !Number.isSafeInteger(quantity)) return state;
+  const current = reservedUnits(state.cart, article.id);
+  if (quantity < 0 || quantity > MAX_STOCK) return state;
+  const delta = quantity - current;
+  if (delta > article.stock)
+    return notify(
+      state,
+      action,
+      `No hay suficientes existencias de ${article.name}. Quedan ${article.stock} unidades.`,
+      'error',
+    );
+  if (delta === 0) return state;
+  const stock = article.stock - delta;
+  if (stock < 0 || stock > MAX_STOCK) return state;
+  const cart =
+    quantity === 0
+      ? state.cart.filter((line) => line.articleId !== article.id)
+      : current > 0
+        ? state.cart.map((line) => (line.articleId === article.id ? { ...line, quantity } : line))
+        : [...state.cart, { articleId: article.id, quantity }];
+  return notify(
+    {
+      ...state,
+      articles: state.articles.map((item) => (item.id === article.id ? { ...item, stock } : item)),
+      cart,
+    },
+    action,
+    `${article.name}: ${quantity} en el carrito y ${stock} disponibles.`,
   );
 }
 
-export function inventoryReducer(articles, action) {
+export function inventoryReducer(state, action) {
   switch (action.type) {
-    case 'article/added':
+    case 'article/added': {
       if (
         !isStoredArticle(action.article) ||
-        articles.some((article) => article.id === action.article.id)
+        state.articles.some((article) => article.id === action.article.id)
       )
-        return articles;
-      return [...articles, { ...action.article }];
-    case 'article/stockChanged':
-      if (action.delta !== 1 && action.delta !== -1) return articles;
-      return articles.map((article) => {
-        if (article.id !== action.id) return article;
-        const stock = article.stock + action.delta;
-        return Number.isSafeInteger(stock) && stock >= 0 && stock <= 1000000
-          ? { ...article, stock }
-          : article;
-      });
+        return state;
+      return notify(
+        { ...state, articles: [...state.articles, { ...action.article }] },
+        action,
+        `Se agregó ${action.article.name} al inventario.`,
+      );
+    }
+    case 'article/stockChanged': {
+      if (action.delta !== 1 && action.delta !== -1) return state;
+      const article = state.articles.find((item) => item.id === action.id);
+      if (!article) return state;
+      const stock = article.stock + action.delta;
+      if (stock < 0 || stock + reservedUnits(state.cart, article.id) > MAX_STOCK) return state;
+      return notify(
+        {
+          ...state,
+          articles: state.articles.map((item) =>
+            item.id === article.id ? { ...item, stock } : item,
+          ),
+        },
+        action,
+        `${article.name}: ${stock} unidades disponibles.`,
+      );
+    }
+    case 'cart/added': {
+      if (!isDecimalInteger(action.quantity, 1, MAX_STOCK)) return state;
+      return transfer(
+        state,
+        action,
+        reservedUnits(state.cart, action.id) + Number(action.quantity),
+      );
+    }
+    case 'cart/changed': {
+      if (action.delta !== 1 && action.delta !== -1) return state;
+      const current = reservedUnits(state.cart, action.id);
+      if (!current) return state;
+      return transfer(state, action, current + action.delta);
+    }
+    case 'cart/removed':
+      return transfer(state, action, 0);
+    case 'cart/cleared': {
+      if (!state.cart.length) return state;
+      return notify(
+        {
+          ...state,
+          articles: state.articles.map((article) => ({
+            ...article,
+            stock: article.stock + reservedUnits(state.cart, article.id),
+          })),
+          cart: [],
+        },
+        action,
+        'Carrito vaciado. Las unidades se devolvieron al inventario.',
+      );
+    }
+    case 'notice/dismissed':
+      return state.notice?.id === action.id ? { ...state, notice: null } : state;
     default:
-      return articles;
+      return state;
   }
 }
